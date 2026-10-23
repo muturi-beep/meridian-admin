@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Meridian Admin — Organizations</title>
+    <link rel="stylesheet" href="css/admin.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="logo">Meridian <em>Admin</em></div>
+      <nav class="nav">
+        <a href="/dashboard.html">Overview</a>
+        <a href="/organizations.html" class="active">Organizations</a>
+      </nav>
+      <div class="user-menu">
+        <span id="adminEmail"></span>
+        <button onclick="logout()">Log out</button>
+      </div>
+    </header>
+
+    <main class="container">
+      <div class="page-head">
+        <div>
+          <h1 id="pageTitle">Organizations</h1>
+          <p class="muted" id="pageSub">
+            All agencies and property managers on the platform.
+          </p>
+        </div>
+        <button class="btn-outline" onclick="loadOrganizations()">
+          ↻ Refresh
+        </button>
+      </div>
+
+      <div class="controls">
+        <input
+          type="text"
+          id="search"
+          class="search-input"
+          placeholder="Search by name, slug, or email..."
+          oninput="debouncedSearch()"
+        />
+        <select
+          id="filter"
+          class="filter-select"
+          onchange="loadOrganizations()"
+        >
+          <option value="">All Organizations</option>
+          <option value="pending">Pending > 24h</option>
+          <option value="expiring">Expiring Trials (≤ 7 days)</option>
+          <option value="inactive">Inactive (no recent activity)</option>
+        </select>
+      </div>
+
+      <div id="content">
+        <div class="loading">Loading...</div>
+      </div>
+    </main>
+
+    <script src="js/api.js"></script>
+    <script src="js/organizations.js"></script>
+  </body>
+</html>
