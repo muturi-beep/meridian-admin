@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Meridian Admin — Sign In</title>
+    <style>
+      :root {
+        --ink: #0c0f18;
+        --ink-2: #131722;
+        --ink-3: #1a2030;
+        --copper: #b8834a;
+        --copper-l: #d4a46a;
+        --t1: #edf0f8;
+        --t2: #7a83a0;
+        --t3: #3a4260;
+        --border: rgba(255, 255, 255, 0.08);
+        --red: #f06060;
+        --green: #3ecf8e;
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        background: var(--ink);
+        color: var(--t1);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      }
+      .card {
+        background: var(--ink-2);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 40px 32px;
+        width: 100%;
+        max-width: 380px;
+        box-shadow: 0 16px 48px rgba(0, 0, 0, 0.4);
+      }
+      .logo {
+        text-align: center;
+        margin-bottom: 28px;
+      }
+      .logo h1 {
+        font-family: Georgia, serif;
+        font-size: 26px;
+        font-weight: 700;
+        color: #fff;
+        letter-spacing: -0.02em;
+      }
+      .logo h1 em {
+        font-style: normal;
+        color: var(--copper-l);
+      }
+      .logo p {
+        font-size: 11px;
+        color: var(--t2);
+        text-transform: uppercase;
+        letter-spacing: 0.15em;
+        margin-top: 6px;
+      }
+      .step {
+        display: none;
+      }
+      .step.active {
+        display: block;
+      }
+      h2 {
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 20px;
+        color: var(--t1);
+      }
+      .field {
+        margin-bottom: 14px;
+      }
+      .field label {
+        display: block;
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--t2);
+        margin-bottom: 6px;
+      }
+      .field input {
+        width: 100%;
+        background: var(--ink-3);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 11px 14px;
+        font-size: 14px;
+        color: var(--t1);
+        font-family: inherit;
+        outline: none;
+        transition:
+          border-color 0.15s,
+          box-shadow 0.15s;
+      }
+      .field input:focus {
+        border-color: var(--copper);
+        box-shadow: 0 0 0 3px rgba(184, 131, 74, 0.15);
+      }
+      .field input::placeholder {
+        color: var(--t3);
+      }
+      .btn {
+        width: 100%;
+        padding: 12px;
+        background: linear-gradient(135deg, var(--copper), var(--copper-l));
+        color: var(--ink);
+        font-size: 14px;
+        font-weight: 700;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-family: inherit;
+        transition:
+          opacity 0.15s,
+          transform 0.1s;
+        margin-top: 4px;
+      }
+      .btn:hover {
+        opacity: 0.92;
+      }
+      .btn:active {
+        transform: scale(0.98);
+      }
+      .btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+      .msg {
+        font-size: 13px;
+        padding: 10px 12px;
+        border-radius: 8px;
+        margin-top: 12px;
+        display: none;
+      }
+      .msg.error {
+        background: rgba(240, 96, 96, 0.12);
+        color: var(--red);
+        border: 1px solid rgba(240, 96, 96, 0.25);
+        display: block;
+      }
+      .msg.success {
+        background: rgba(62, 207, 142, 0.12);
+        color: var(--green);
+        border: 1px solid rgba(62, 207, 142, 0.25);
+        display: block;
+      }
+      .hint {
+        font-size: 11px;
+        color: var(--t2);
+        margin-top: 10px;
+        line-height: 1.5;
+      }
+      .hint code {
+        background: var(--ink-3);
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-size: 11px;
+        color: var(--copper-l);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <div class="logo">
+        <h1>Meridian <em>Admin</em></h1>
+        <p>System Dashboard</p>
+      </div>
+
+      <!-- STEP 1: EMAIL + PASSWORD -->
+      <div class="step active" id="step1">
+        <h2>Sign In</h2>
+        <form id="formLogin" onsubmit="handleLogin(event)">
+          <div class="field">
+            <label>Email</label>
+            <input type="email" id="email" required autocomplete="username" />
+          </div>
+          <div class="field">
+            <label>Password</label>
+            <input
+              type="password"
+              id="password"
+              required
+              autocomplete="current-password"
+            />
+          </div>
+          <button type="submit" class="btn" id="loginBtn">Continue</button>
+          <div class="msg" id="loginMsg"></div>
+        </form>
+      </div>
+
+      <!-- STEP 2: 2FA CODE -->
+      <div class="step" id="step2">
+        <h2>Two-Factor Authentication</h2>
+        <p style="font-size: 13px; color: var(--t2); margin-bottom: 16px">
+          Enter the 6-digit code from your authenticator.
+        </p>
+        <form id="form2fa" onsubmit="handle2fa(event)">
+          <div class="field">
+            <label>Authentication Code</label>
+            <input
+              type="text"
+              id="code"
+              required
+              inputmode="numeric"
+              pattern="\d{6}"
+              maxlength="6"
+              placeholder="000000"
+              style="
+                letter-spacing: 0.4em;
+                text-align: center;
+                font-size: 20px;
+                font-family: monospace;
+              "
+            />
+          </div>
+          <button type="submit" class="btn" id="verifyBtn">Verify</button>
+          <div class="msg" id="verifyMsg"></div>
+        </form>
+        <div class="hint">
+          No code on your phone? Run <code>node totp.js</code> in the project
+          folder to see the current code.
+        </div>
+      </div>
+
+      <!-- STEP 3: SUCCESS (redirects) -->
+      <div class="step" id="step3">
+        <h2>✅ Welcome</h2>
+        <p style="font-size: 13px; color: var(--t2)">
+          Redirecting to dashboard...
+        </p>
+      </div>
+    </div>
+
+    <script>
+      const API = location.origin;
+      let pendingToken = null;
+
+      function showStep(n) {
+        document.querySelectorAll(".step").forEach((el, i) => {
+          el.classList.toggle("active", i === n - 1);
+        });
+      }
+
+      function showMsg(id, text, type) {
+        const el = document.getElementById(id);
+        el.textContent = text;
+        el.className = "msg " + type;
+      }
+
+      async function handleLogin(e) {
+        e.preventDefault();
+        const email = document.getElementById("email").value.trim();
+        const password = document.getElementById("password").value;
+        const btn = document.getElementById("loginBtn");
+
+        btn.disabled = true;
+        btn.textContent = "Checking...";
+
+        try {
+          const res = await fetch(API + "/api/auth/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, password }),
+          });
+          const data = await res.json();
+
+          if (!res.ok) throw new Error(data.message || "Login failed");
+
+          pendingToken = data.pendingToken;
+          showStep(2);
+          document.getElementById("code").focus();
+        } catch (err) {
+          showMsg("loginMsg", err.message, "error");
+        } finally {
+          btn.disabled = false;
+          btn.textContent = "Continue";
+        }
+      }
+
+      async function handle2fa(e) {
+        e.preventDefault();
+        const code = document.getElementById("code").value.trim();
+        const btn = document.getElementById("verifyBtn");
+
+        btn.disabled = true;
+        btn.textContent = "Verifying...";
+
+        try {
+          const res = await fetch(API + "/api/auth/verify-2fa", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ pendingToken, code }),
+          });
+          const data = await res.json();
+
+          if (!res.ok) throw new Error(data.message || "Verification failed");
+
+          localStorage.setItem(
+            "admin_session",
+            JSON.stringify({
+              token: data.token,
+              email: data.email,
+              savedAt: Date.now(),
+            }),
+          );
+
+          showStep(3);
+          setTimeout(() => {
+            window.location.href = "/dashboard.html";
+          }, 600);
+        } catch (err) {
+          showMsg("verifyMsg", err.message, "error");
+          btn.disabled = false;
+          btn.textContent = "Verify";
+        }
+      }
+
+      // If already logged in, skip login
+      const existing = localStorage.getItem("admin_session");
+      if (existing) {
+        try {
+          const s = JSON.parse(existing);
+          if (
+            s.token &&
+            s.savedAt &&
+            Date.now() - s.savedAt < 2 * 60 * 60 * 1000
+          ) {
+            window.location.href = "/dashboard.html";
+          }
+        } catch {}
+      }
+    </script>
+  </body>
+</html>
