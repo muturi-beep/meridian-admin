@@ -169,4 +169,64 @@ router.get("/api/organizations/:id", requireAdmin, async (req, res) => {
   }
 });
 
+// ══════════════════════════════════════════════════════
+// GET /api/users/search
+// Query: ?q=text&role=...&limit=N
+// Searches name, email, phone. Returns enriched user list.
+// ══════════════════════════════════════════════════════
+router.get("/api/users/search", requireAdmin, async (req, res) => {
+  try {
+    const { q, role, limit = 50 } = req.query;
+
+    const query = {};
+
+    if (q && String(q).trim()) {
+      const safe = String(q)
+        .trim()
+        .replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      query.$or = [
+        { email: { $regex: safe, $options: "i" } },
+        { firstName: { $regex: safe, $options: "i" } },
+        { lastName: { $regex: safe, $options: "i" } },
+        { phone: { $regex: safe, $options: "i" } },
+      ];
+    }
+
+    if (role) query.role = role;
+
+    const max = Math.min(Number(limit) || 50, 200);
+
+    const users = await User.find(query)
+      .select("-password")
+      .sort({ createdAt: -1 })
+      .limit(max)
+      .lean();
+
+    // Enrich with org name
+    const orgIds = [...new Set(users.map((u) => String(u.organization)))];
+    const orgs = await Organization.find({ _id: { $in: orgIds } })
+      .select("name slug")
+      .lean();
+    const orgById = Object.fromEntries(orgs.map((o) => [String(o._id), o]));
+
+    const enriched = users.map((u) => ({
+      _id: u._id,
+      firstName: u.firstName,
+      lastName: u.lastName,
+      email: u.email,
+      phone: u.phone || "",
+      role: u.role,
+      createdAt: u.createdAt,
+      organization: u.organization,
+      orgName: orgById[String(u.organization)]?.name || "(deleted)",
+      orgSlug: orgById[String(u.organization)]?.slug || "",
+    }));
+
+    res.json({ users: enriched, count: enriched.length });
+  } catch (err) {
+    console.error("User search error:", err);
+    res.status(500).json({ message: "Unable to search users." });
+  }
+});
+
 module.exports = router;
