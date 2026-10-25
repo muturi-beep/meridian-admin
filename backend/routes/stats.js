@@ -39,6 +39,80 @@ function daysAgo(n) {
 }
 
 // ══════════════════════════════════════════════════════
+// GET /api/stats/mrr-history
+// Returns the last 6 months of "active subscriptions by month".
+// A subscription counts in a month if it was active and its
+// startsAt..expiresAt window overlaps that month.
+// ══════════════════════════════════════════════════════
+router.get("/api/stats/mrr-history", requireAdmin, async (req, res) => {
+  try {
+    // Build the last 6 month boundaries: [start of oldest, start of newest+1)
+    const now = new Date();
+    const months = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      months.push({
+        label: d.toLocaleString("en", { month: "short" }),
+        year: d.getFullYear(),
+        month: d.getMonth(),
+        start: d,
+        end: new Date(d.getFullYear(), d.getMonth() + 1, 1),
+        total: 0,
+        activeCount: 0,
+      });
+    }
+
+    const oldestMonth = months[0].start;
+
+    // Fetch all subscriptions that *could* overlap the range:
+    // - status active or trial (only these generate MRR)
+    // - created before end of the range
+    // - startsAt is null OR before end of range
+    // - expiresAt is null OR after start of range
+    const rangeStart = oldestMonth;
+    const rangeEnd = months[months.length - 1].end;
+
+    const subs = await Subscription.find({
+      status: { $in: ["active"] }, // only paid subs count towards MRR
+      $or: [{ expiresAt: null }, { expiresAt: { $gt: rangeStart } }],
+      startsAt: { $lt: rangeEnd },
+    }).lean();
+
+    // For each month, sum subscriptions whose window covers that month
+    for (const m of months) {
+      for (const s of subs) {
+        const startsAt = s.startsAt ? new Date(s.startsAt) : null;
+        const expiresAt = s.expiresAt ? new Date(s.expiresAt) : null;
+
+        // Did this sub cover the m.start..m.end window?
+        const overlaps =
+          (!startsAt || startsAt < m.end) &&
+          (!expiresAt || expiresAt > m.start);
+
+        if (overlaps) {
+          m.total += Number(s.amount) || 0;
+          m.activeCount += 1;
+        }
+      }
+    }
+
+    res.json({
+      months: months.map((m) => ({
+        label: m.label,
+        year: m.year,
+        month: m.month,
+        total: m.total,
+        activeCount: m.activeCount,
+      })),
+      generatedAt: new Date().toISOString(),
+    });
+  } catch (err) {
+    console.error("MRR history error:", err);
+    res.status(500).json({ message: "Unable to fetch MRR history." });
+  }
+});
+
+// ══════════════════════════════════════════════════════
 // GET /api/stats/overview
 // Returns the dashboard overview data.
 // ══════════════════════════════════════════════════════
