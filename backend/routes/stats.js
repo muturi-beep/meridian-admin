@@ -178,12 +178,27 @@ router.get("/api/stats/overview", requireAdmin, async (req, res) => {
       subscriptionExpiresAt: { $gte: new Date(), $lte: weekFromNow },
     });
 
-    // ── Orgs pending payment > 24h ──
-    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-    const pendingOver24h = await Organization.countDocuments({
-      subscriptionStatus: "pending",
-      createdAt: { $lt: oneDayAgo },
-    });
+    // ── Orgs pending payment, broken into tiers ──
+    const oneDayAgo = new Date(Date.now() - 1 * 24 * 60 * 60 * 1000);
+    const fourDaysAgo = new Date(Date.now() - 4 * 24 * 60 * 60 * 1000);
+    const eightDaysAgo = new Date(Date.now() - 8 * 24 * 60 * 60 * 1000);
+
+    const [pending1to3, pending4to7, pending8Plus] = await Promise.all([
+      Organization.countDocuments({
+        subscriptionStatus: "pending",
+        createdAt: { $gte: fourDaysAgo, $lt: oneDayAgo },
+      }),
+      Organization.countDocuments({
+        subscriptionStatus: "pending",
+        createdAt: { $gte: eightDaysAgo, $lt: fourDaysAgo },
+      }),
+      Organization.countDocuments({
+        subscriptionStatus: "pending",
+        createdAt: { $lt: eightDaysAgo },
+      }),
+    ]);
+
+    const pendingOver24h = pending1to3 + pending4to7 + pending8Plus;
 
     // ── Orgs with no activity in 14 days ──
     // We approximate "activity" via last property/tenant/payment creation.
@@ -217,6 +232,9 @@ router.get("/api/stats/overview", requireAdmin, async (req, res) => {
       alerts: {
         expiringSoon,
         pendingOver24h,
+        pending1to3,
+        pending4to7,
+        pending8Plus,
         inactiveOrgs,
       },
       generatedAt: new Date().toISOString(),

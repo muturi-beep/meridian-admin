@@ -87,19 +87,21 @@ function renderOverview(data, mrrData) {
 
     ${renderMrrChart(mrrData)}
 
-    ${
-      a.pendingOver24h + a.expiringSoon + a.inactiveOrgs > 0
-        ? `
+        ${
+          a.pendingOver24h + a.expiringSoon + a.inactiveOrgs > 0
+            ? `
       <div class="section">
         <h2>Needs Attention</h2>
         <div class="alerts">
-          ${alertRow("danger", "Orgs pending payment > 24 hours", a.pendingOver24h, "/organizations.html?filter=pending")}
-          ${alertRow("warn", "Orgs with expiring trials (≤ 7 days)", a.expiringSoon, "/organizations.html?filter=expiring")}
-          ${alertRow("info", "Orgs with no activity in 14 days", a.inactiveOrgs, "/organizations.html?filter=inactive")}
+          ${alertRow("danger", "Pending 8+ days — stuck, reach out now", a.pending8Plus, "/organizations.html?filter=pending")}
+          ${alertRow("warn", "Pending 4–7 days — worth a follow-up", a.pending4to7, "/organizations.html?filter=pending")}
+          ${alertRow("info", "Pending 1–3 days — waiting", a.pending1to3, "/organizations.html?filter=pending")}
+          ${alertRow("warn", "Expiring trials (≤ 7 days)", a.expiringSoon, "/organizations.html?filter=expiring")}
+          ${alertRow("info", "Inactive 14+ days", a.inactiveOrgs, "/organizations.html?filter=inactive")}
         </div>
       </div>`
-        : ""
-    }
+            : ""
+        }
 
     <div class="section">
       <h2>Quick Links</h2>
