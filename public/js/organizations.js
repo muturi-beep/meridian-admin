@@ -141,6 +141,141 @@ function renderList(orgs, filter) {
     </div>`;
 }
 
+// ══════════════════════════════════════════════════════
+// CSV Export — exports currently filtered orgs
+// ══════════════════════════════════════════════════════
+
+function csvCell(v) {
+  const s = String(v ?? "");
+  // Wrap in quotes, double internal quotes (RFC 4180)
+  return '"' + s.replace(/"/g, '""') + '"';
+}
+
+function csvRow(values) {
+  return values.map(csvCell).join(",");
+}
+
+function downloadCsv(filename, rows) {
+  // UTF-8 BOM so Excel opens accented characters correctly
+  const csv = "\uFEFF" + rows.join("\r\n") + "\r\n";
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 0);
+}
+
+function exportOrgsCsv() {
+  if (!allOrgs.length) {
+    alert("No organizations to export. Adjust your filters.");
+    return;
+  }
+
+  // Format helpers
+  const dateStr = (d) => {
+    if (!d) return "";
+    return new Date(d).toISOString().slice(0, 10);
+  };
+  const planLabel = (plan) => {
+    if (!plan) return "";
+    const map = {
+      free: "Free",
+      basic: "Basic",
+      professional: "Professional",
+      enterprise: "Enterprise",
+    };
+    return map[plan] || plan;
+  };
+
+  const rows = [
+    csvRow([
+      "Name",
+      "Slug",
+      "Type",
+      "Email",
+      "Plan",
+      "Status",
+      "Days Left",
+      "Users",
+      "Properties",
+      "Units",
+      "Created",
+      "Expires",
+    ]),
+    ...allOrgs.map((o) =>
+      csvRow([
+        o.name,
+        o.slug,
+        o.type || "",
+        o.email || "",
+        planLabel(o.plan),
+        o.subscriptionStatus || "",
+        o.daysLeft || 0,
+        o.userCount || 0,
+        o.propCount || 0,
+        o.unitCount || 0,
+        dateStr(o.createdAt),
+        dateStr(o.subscriptionExpiresAt),
+      ]),
+    ),
+  ];
+
+  // Filename includes filter context + date
+  const filter = document.getElementById("filter").value || "all";
+  const search = currentSearch
+    ? "-" + currentSearch.slice(0, 12).replace(/[^a-zA-Z0-9]/g, "")
+    : "";
+  const stamp = new Date().toISOString().slice(0, 10);
+  const filename = `organizations-${filter}${search}-${stamp}.csv`;
+
+  downloadCsv(filename, rows);
+
+  // Brief toast
+  showToast(
+    `Exported ${allOrgs.length} organization${allOrgs.length === 1 ? "" : "s"} to ${filename}`,
+  );
+}
+
+// ── Simple toast (auto-dismisses) ──
+function showToast(message) {
+  let el = document.getElementById("csv-toast");
+  if (!el) {
+    el = document.createElement("div");
+    el.id = "csv-toast";
+    el.style.cssText = `
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: rgba(62,207,142,.15);
+      border: 1px solid rgba(62,207,142,.35);
+      color: #3ecf8e;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      z-index: 9999;
+      box-shadow: 0 8px 24px rgba(0,0,0,.4);
+      opacity: 0;
+      transform: translateY(10px);
+      transition: all .25s ease;
+    `;
+    document.body.appendChild(el);
+  }
+  el.textContent = message;
+  requestAnimationFrame(() => {
+    el.style.opacity = "1";
+    el.style.transform = "translateY(0)";
+  });
+  setTimeout(() => {
+    el.style.opacity = "0";
+    el.style.transform = "translateY(10px)";
+  }, 3000);
+}
+
 let searchTimer = null;
 function debouncedSearch() {
   clearTimeout(searchTimer);

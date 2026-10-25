@@ -52,6 +52,29 @@
           <option value="expiring">Expiring Trials (≤ 7 days)</option>
           <option value="inactive">Inactive (no recent activity)</option>
         </select>
+
+        <div class="controls">
+          <input
+            type="text"
+            id="search"
+            class="search-input"
+            placeholder="Search by name, slug, or email..."
+            oninput="debouncedSearch()"
+          />
+          <select
+            id="filter"
+            class="filter-select"
+            onchange="loadOrganizations()"
+          >
+            <option value="">All Organizations</option>
+            <option value="pending">Pending > 24h</option>
+            <option value="expiring">Expiring Trials (≤ 7 days)</option>
+            <option value="inactive">Inactive (no recent activity)</option>
+          </select>
+          <button class="btn-outline" onclick="exportOrgsCsv()">
+            ↓ Export CSV
+          </button>
+        </div>
       </div>
 
       <div id="content">
