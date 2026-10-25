@@ -216,6 +216,37 @@ h2 {
 }
 .table-wrap {
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch; /* smooth momentum on iOS */
+  scrollbar-width: thin;
+}
+.table-wrap::-webkit-scrollbar {
+  height: 8px;
+}
+.table-wrap::-webkit-scrollbar-track {
+  background: var(--ink-3);
+}
+.table-wrap::-webkit-scrollbar-thumb {
+  background: rgba(184, 131, 74, 0.4);
+  border-radius: 4px;
+}
+.table-wrap::-webkit-scrollbar-thumb:hover {
+  background: rgba(184, 131, 74, 0.6);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  min-width: 800px; /* ← KEY: prevents columns from being crushed on mobile */
+}
+
+th,
+td {
+  text-align: left;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+  white-space: nowrap; /* ← KEY: prevents cells from wrapping into many lines */
 }
 table {
   width: 100%;

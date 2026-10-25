@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Meridian Admin — Payments</title>
+    <link rel="stylesheet" href="css/admin.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="logo">Meridian <em>Admin</em></div>
+      <nav class="nav">
+        <a href="/dashboard.html">Overview</a>
+        <a href="/organizations.html">Organizations</a>
+        <a href="/payments.html" class="active">Payments</a>
+      </nav>
+      <div class="user-menu">
+        <span id="adminEmail"></span>
+        <button onclick="logout()">Log out</button>
+      </div>
+    </header>
+
+    <main class="container">
+      <div class="page-head">
+        <div>
+          <h1>Payments</h1>
+          <p class="muted">Every payment recorded across all organizations.</p>
+        </div>
+        <button class="btn-outline" onclick="loadPayments()">↻ Refresh</button>
+      </div>
+
+      <div class="controls">
+        <input
+          type="text"
+          id="search"
+          class="search-input"
+          placeholder="Search by tenant, reference, or receipt #..."
+          oninput="debouncedLoad()"
+        />
+        <input
+          type="date"
+          id="from"
+          class="filter-select"
+          onchange="loadPayments()"
+        />
+        <input
+          type="date"
+          id="to"
+          class="filter-select"
+          onchange="loadPayments()"
+        />
+        <select id="filterType" class="filter-select" onchange="loadPayments()">
+          <option value="">All Types</option>
+          <option value="Rent">Rent</option>
+          <option value="Deposit">Deposit</option>
+          <option value="Water">Water</option>
+          <option value="Garbage">Garbage</option>
+          <option value="Service Charge">Service Charge</option>
+          <option value="Other">Other</option>
+        </select>
+        <select
+          id="filterStatus"
+          class="filter-select"
+          onchange="loadPayments()"
+        >
+          <option value="">All Statuses</option>
+          <option value="Paid">Paid</option>
+          <option value="Pending">Pending</option>
+          <option value="Overdue">Overdue</option>
+          <option value="Failed">Failed</option>
+        </select>
+        <select id="filterOrg" class="filter-select" onchange="loadPayments()">
+          <option value="">All Organizations</option>
+        </select>
+      </div>
+
+      <div id="summary" style="margin-bottom: 20px"></div>
+
+      <div id="content">
+        <div class="loading">Loading payments...</div>
+      </div>
+    </main>
+
+    <script src="js/api.js"></script>
+    <script src="js/payments-log.js"></script>
+  </body>
+</html>
