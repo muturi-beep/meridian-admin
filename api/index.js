@@ -58,6 +58,10 @@ app.use(organizationsRoutes);
 const paymentsLogRoutes = require("../backend/routes/payments");
 app.use(paymentsLogRoutes);
 
+// Notes routes
+const notesRoutes = require("../backend/routes/notes");
+app.use(notesRoutes);
+
 // Placeholder for future routes
 app.use((req, res, next) => {
   if (req.path.startsWith("/api/") || req.path.startsWith("/auth/")) {

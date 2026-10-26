@@ -49,6 +49,16 @@ function roleLabel(role) {
   return map[role] || role;
 }
 
+function escapeHtml(s) {
+  return String(s || "").replace(
+    /[&<>"']/g,
+    (c) =>
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[
+        c
+      ],
+  );
+}
+
 async function loadOrganization() {
   const params = new URLSearchParams(window.location.search);
   const id = params.get("id");
@@ -223,9 +233,140 @@ function renderDetail(data) {
           : '<div class="empty-small">No payments yet.</div>'
       }
     </div>
+
+    <div class="section" id="notesSection">
+      <h2>Internal Notes</h2>
+      <div class="notes-card">
+        <div class="notes-form">
+          <textarea
+            id="noteBody"
+            placeholder="Write a note about this client... (called on X, wants upgrade in Y, referred by Z)"
+            maxlength="5000"
+          ></textarea>
+          <div class="notes-actions">
+            <span class="notes-hint">Private — only you can see this</span>
+            <button class="btn-outline" id="noteSubmitBtn" onclick="submitNote()">Save Note</button>
+          </div>
+        </div>
+        <div id="notesList" class="notes-list">
+          <div class="muted" style="text-align:center;padding:20px;">Loading notes...</div>
+        </div>
+      </div>
+    </div>
   `;
 
   document.getElementById("content").innerHTML = html;
+
+  loadNotes();
+}
+
+// ══════════════════════════════════════════════════════
+// NOTES
+// ══════════════════════════════════════════════════════
+
+function fmtRelative(d) {
+  if (!d) return "";
+  const ms = Date.now() - new Date(d).getTime();
+  const mins = Math.floor(ms / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return mins + "m ago";
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return hours + "h ago";
+  const days = Math.floor(hours / 24);
+  if (days < 30) return days + "d ago";
+  return new Date(d).toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+async function loadNotes() {
+  const params = new URLSearchParams(window.location.search);
+  const orgId = params.get("id");
+  if (!orgId) return;
+
+  const el = document.getElementById("notesList");
+  if (!el) return;
+
+  try {
+    const data = await api("/api/organizations/" + orgId + "/notes");
+    renderNotes(data.notes);
+  } catch (err) {
+    el.innerHTML = `<div class="muted" style="text-align:center;padding:20px;">Could not load notes: ${escapeHtml(err.message)}</div>`;
+  }
+}
+
+function renderNotes(notes) {
+  const el = document.getElementById("notesList");
+  if (!el) return;
+
+  if (!notes.length) {
+    el.innerHTML = `<div class="muted" style="text-align:center;padding:24px;">No notes yet. Add your first one above.</div>`;
+    return;
+  }
+
+  el.innerHTML = notes
+    .map(
+      (n) => `
+      <div class="note-item">
+        <div class="note-head">
+          <span class="note-author">${escapeHtml(n.authorEmail || "admin")}</span>
+          <span class="note-time">${fmtRelative(n.createdAt)}</span>
+          <button class="note-delete" onclick="deleteNote('${n._id}')" title="Delete note">×</button>
+        </div>
+        <div class="note-body">${escapeHtml(n.body).replace(/\n/g, "<br>")}</div>
+      </div>`,
+    )
+    .join("");
+}
+
+async function submitNote() {
+  const params = new URLSearchParams(window.location.search);
+  const orgId = params.get("id");
+  if (!orgId) return;
+
+  const textarea = document.getElementById("noteBody");
+  const btn = document.getElementById("noteSubmitBtn");
+  const body = textarea.value.trim();
+
+  if (!body) {
+    textarea.focus();
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = "Saving...";
+
+  try {
+    await api("/api/organizations/" + orgId + "/notes", {
+      method: "POST",
+      body: JSON.stringify({ body }),
+    });
+    textarea.value = "";
+    await loadNotes();
+  } catch (err) {
+    alert("Could not save note: " + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Save Note";
+  }
+}
+
+async function deleteNote(noteId) {
+  if (!confirm("Delete this note?")) return;
+  const params = new URLSearchParams(window.location.search);
+  const orgId = params.get("id");
+  if (!orgId) return;
+
+  try {
+    await api("/api/organizations/" + orgId + "/notes/" + noteId, {
+      method: "DELETE",
+    });
+    await loadNotes();
+  } catch (err) {
+    alert("Could not delete note: " + err.message);
+  }
 }
 
 document.addEventListener("DOMContentLoaded", () => {
